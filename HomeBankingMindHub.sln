@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34607.119
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HomeBankingMindHub", "HomeBankingMindHub\HomeBankingMindHub.csproj", "{CE23D25D-5B96-48C2-9AEC-C0CBE3C74360}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CE23D25D-5B96-48C2-9AEC-C0CBE3C74360}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CE23D25D-5B96-48C2-9AEC-C0CBE3C74360}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CE23D25D-5B96-48C2-9AEC-C0CBE3C74360}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CE23D25D-5B96-48C2-9AEC-C0CBE3C74360}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {07E02B6E-3D17-42DE-AE9E-78E6B5C2CA92}
+	EndGlobalSection
+EndGlobal
