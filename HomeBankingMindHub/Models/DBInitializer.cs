@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace HomeBankingMindHub.Models
 {
@@ -51,6 +52,31 @@ namespace HomeBankingMindHub.Models
                 context.SaveChanges();
 
             }
+
+
+            if (!context.Set<Transaction>().Any())
+            {
+
+                var account1 = context.Account.FirstOrDefault(c => c.Number == "VIN001");
+                var account2 = context.Account.FirstOrDefault(c => c.Number == "EZN001");
+                var account3 = context.Account.FirstOrDefault(c => c.Number == "LUN001");
+
+
+                AddTransaction(context, TransactionType.CREDIT, account1, 10000, "Transferencia recibida");
+                AddTransaction(context, TransactionType.DEBIT, account1, -2000, "Compra en tienda mercado libre");
+                AddTransaction(context, TransactionType.DEBIT, account1, -3000, "Compra en tienda xxxx");
+
+                AddTransaction(context, TransactionType.CREDIT, account2, 200000, "Transferencia recibida");
+                AddTransaction(context, TransactionType.DEBIT, account2, -60000, "Compra en tienda mercado libre");
+                AddTransaction(context, TransactionType.DEBIT, account2, -20000, "Compra en tienda xxxx");
+
+                AddTransaction(context, TransactionType.CREDIT, account3, 300000, "Transferencia recibida");
+                AddTransaction(context, TransactionType.DEBIT, account3, -40000, "Compra en tienda mercado libre");
+                AddTransaction(context, TransactionType.DEBIT, account3, -100000, "Compra en tienda xxxx");
+
+                context.SaveChanges();
+
+            }
         }
         private static void AddAccountIfNotNull(DbContext context, Client client, string accountNumber, double balance)
         {
@@ -65,6 +91,23 @@ namespace HomeBankingMindHub.Models
                 };
 
                 context.Set<Account>().Add(account);
+            }
+        }
+
+        private static void AddTransaction(DbContext context, TransactionType type, Account account, double amount, string description)
+        {
+            if (account != null)
+            {
+                var transaction = new Transaction
+                {
+                    AccountId = account.Id,
+                    Type = type,
+                    Date = DateTime.Now,
+                    Amount = amount,
+                    Description = description
+                };
+
+                context.Set<Transaction>().Add(transaction);
             }
         }
     }

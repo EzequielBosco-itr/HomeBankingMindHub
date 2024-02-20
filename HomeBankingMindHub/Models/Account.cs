@@ -16,4 +16,6 @@ public class Account
 
     public long ClientId { get; set; }
 
+    public ICollection<Transaction> Transactions { get; set; }
+
 }
