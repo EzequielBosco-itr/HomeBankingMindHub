@@ -21,5 +21,11 @@ namespace HomeBankingMindHub.Repositories
                 .Include(account => account.Transactions)
                 .FirstOrDefault();
         }
+
+        public void Save(Account account)
+        {
+            Create(account);
+            SaveChanges();
+        }
     }
 }

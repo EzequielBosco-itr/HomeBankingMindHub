@@ -8,5 +8,7 @@ namespace HomeBankingMindHub.Repositories
 
         Account GetAccountById(long id);
 
+        void Save(Account account);
+
     }
 }
