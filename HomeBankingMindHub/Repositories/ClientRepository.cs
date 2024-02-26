@@ -19,6 +19,16 @@ namespace HomeBankingMindHub.Repositories
                 .FirstOrDefault();
         }
 
+        public Client FindByEmail(string email)
+        {
+            return FindByCondition(client => client.Email.ToUpper() == email.ToUpper())
+            .Include(client => client.Accounts)
+            .Include(client => client.ClientLoans)
+                .ThenInclude(cl => cl.Loan)
+            .Include(client => client.Cards)
+            .FirstOrDefault();
+        }
+
         public IEnumerable<Client> GetAllClients()
         {
             return FindAll()
@@ -28,6 +38,12 @@ namespace HomeBankingMindHub.Repositories
                 .Include(client => client.Cards)
                 .ToList();
         }
+
+        public bool ExistsByEmail(string email)
+        {
+            return FindByCondition(client => client.Email == email).Any();
+        }
+
 
         public void Save(Client client)
         {

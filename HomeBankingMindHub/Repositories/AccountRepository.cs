@@ -22,6 +22,13 @@ namespace HomeBankingMindHub.Repositories
                 .FirstOrDefault();
         }
 
+        public Account GetAccountByIdAndClientEmail(long id, string email)
+        {
+            return FindByCondition(account => account.Id == id && account.Client.Email == email)
+                .Include(account => account.Transactions)
+                .FirstOrDefault();
+        }
+
         public void Save(Account account)
         {
             Create(account);
