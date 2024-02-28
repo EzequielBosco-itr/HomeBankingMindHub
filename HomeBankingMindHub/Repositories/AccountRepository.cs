@@ -1,5 +1,6 @@
 ﻿using HomeBankingMindHub.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 
 namespace HomeBankingMindHub.Repositories
 {
@@ -33,6 +34,23 @@ namespace HomeBankingMindHub.Repositories
         {
             Create(account);
             SaveChanges();
+        }
+
+        public IEnumerable<Account> GetAccountsByEmail(string clientEmail)
+        {
+            return FindByCondition(account => account.Client.Email == clientEmail)
+            .Include(account => account.Transactions)
+            .ToList();
+        }
+
+        public int GetAccountsCountByClient(long clientId)
+        {
+            return FindByCondition(account => account.Client.Id == clientId).Count();
+        }
+
+        public bool ExistsByAccountNumber(string accountNumber)
+        {
+            return FindByCondition(account => account.Number == accountNumber).Any();
         }
     }
 }

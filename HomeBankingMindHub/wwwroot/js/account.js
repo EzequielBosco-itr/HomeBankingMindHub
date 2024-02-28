@@ -19,9 +19,8 @@ var app = new Vue({
             .catch(function (error) {
                 // handle error
                 //app.error = error;
-                //this.errorMsg = "Error getting data";
-                //this.errorToats.show();
-                console.log(error)
+                this.errorMsg = "Error getting data";
+                this.errorToats.show();
             })
         },
         formatDate: function(date){

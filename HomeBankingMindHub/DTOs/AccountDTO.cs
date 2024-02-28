@@ -2,7 +2,7 @@
 
 using System;
 
-namespace HomeBankingMindHub.dtos
+namespace HomeBankingMindHub.DTOs
 
 {
 

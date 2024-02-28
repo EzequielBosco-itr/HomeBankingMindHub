@@ -1,4 +1,4 @@
-﻿namespace HomeBankingMindHub.Models
+﻿namespace HomeBankingMindHub.DTOs
 {
     public class ClientLoginDTO
     {
