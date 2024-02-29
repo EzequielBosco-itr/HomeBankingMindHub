@@ -46,7 +46,7 @@ namespace HomeBankingMindHub.Migrations
 
                     b.HasIndex("ClientId");
 
-                    b.ToTable("Account");
+                    b.ToTable("Accounts");
                 });
 
             modelBuilder.Entity("HomeBankingMindHub.Models.Card", b =>
@@ -101,6 +101,9 @@ namespace HomeBankingMindHub.Migrations
 
                     b.Property<string>("FirstName")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsAdmin")
+                        .HasColumnType("bit");
 
                     b.Property<string>("LastName")
                         .HasColumnType("nvarchar(max)");
@@ -207,11 +210,13 @@ namespace HomeBankingMindHub.Migrations
 
             modelBuilder.Entity("HomeBankingMindHub.Models.Card", b =>
                 {
-                    b.HasOne("HomeBankingMindHub.Models.Client", null)
+                    b.HasOne("HomeBankingMindHub.Models.Client", "Client")
                         .WithMany("Cards")
                         .HasForeignKey("ClientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Client");
                 });
 
             modelBuilder.Entity("HomeBankingMindHub.Models.ClientLoan", b =>

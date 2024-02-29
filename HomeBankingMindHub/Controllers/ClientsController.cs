@@ -248,8 +248,6 @@ namespace HomeBankingMindHub.Controllers
                     return Forbid();
                 }
 
-                Console.WriteLine("Paso las verificaciones, encontro al cliente");
-
                 var clientDTO = new ClientDTO
                 {
                     Id = client.Id,
@@ -284,7 +282,6 @@ namespace HomeBankingMindHub.Controllers
                     }).ToList()
                 };
 
-                Console.WriteLine("Creo el DTO");
                 return Ok(clientDTO);
             }
             catch (Exception ex)
@@ -403,6 +400,7 @@ namespace HomeBankingMindHub.Controllers
         }
 
         [HttpGet("current/accounts")]
+        [Authorize(Policy = "ClientOnly")]
         public IActionResult GetAccounts()
         {
             try
@@ -560,6 +558,7 @@ namespace HomeBankingMindHub.Controllers
         }
 
         [HttpGet("current/cards")]
+        [Authorize(Policy = "ClientOnly")]
         public IActionResult GetCards()
         {
             try

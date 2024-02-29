@@ -18,5 +18,7 @@ namespace HomeBankingMindHub.Repositories
 
         bool ExistsByAccountNumber(string accountNumber);
 
+        Account FindByNumber(string number);
+
     }
 }
