@@ -334,8 +334,34 @@ namespace HomeBankingMindHub.Controllers
                 };
 
                 _clientRepository.Save(newClient);
-                return Created("", newClient);
 
+                // Obtengo cliente
+                newClient = _clientRepository.FindByEmail(client.Email);
+
+                // Creo número de cuenta
+                int randomAccountNumber = RandomNumber.GenerateRandomNumber(100000, 999999);
+                string accountNumber = $"VIN-{randomAccountNumber}";
+
+                // Verifico si el número de cuenta es único
+                while (_accountRepository.ExistsByAccountNumber(accountNumber))
+                {
+                    // Si ya existe, genero un nuevo número y vuelvo a verificar
+                    randomAccountNumber = RandomNumber.GenerateRandomNumber(100000, 999999);
+                    accountNumber = $"VIN-{randomAccountNumber}";
+                }
+
+                var newAccount = new Account
+                {
+                    ClientId = newClient.Id,
+                    Number = accountNumber,
+                    Balance = 0,
+                    CreationDate = DateTime.Now,
+                };
+
+                // guardo
+                _accountRepository.Save(newAccount);
+
+                return Created("", newClient); 
             }
             catch (Exception ex)
             {
