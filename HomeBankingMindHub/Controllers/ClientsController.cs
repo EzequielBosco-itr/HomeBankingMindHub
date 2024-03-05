@@ -324,10 +324,14 @@ namespace HomeBankingMindHub.Controllers
                 // verifico si es de la empresa para dar admin
                 bool isAdmin = client.Email.Contains("vt.com.ar");
 
+                // Hash pass
+
+                string passwordHash = BCrypt.Net.BCrypt.HashPassword(client.Password);
+
                 Client newClient = new Client
                 {
                     Email = client.Email,
-                    Password = client.Password,
+                    Password = passwordHash,
                     FirstName = client.FirstName,
                     LastName = client.LastName,
                     IsAdmin = isAdmin,

@@ -29,7 +29,7 @@ namespace HomeBankingMindHub.Controllers
             try
             {
                 Client user = _clientRepository.FindByEmail(client.Email);
-                if (user == null || !String.Equals(user.Password, client.Password))
+                if (user == null || !BCrypt.Net.BCrypt.Verify(client.Password, user.Password))
                     return Unauthorized();
 
                 var claims = new List<Claim>
