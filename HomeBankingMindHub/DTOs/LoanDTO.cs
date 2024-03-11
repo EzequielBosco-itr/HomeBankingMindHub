@@ -1,4 +1,7 @@
-﻿namespace HomeBankingMindHub.DTOs
+﻿using HomeBankingMindHub.Models;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
+
+namespace HomeBankingMindHub.DTOs
 {
     public class LoanDTO
     {
@@ -6,5 +9,15 @@
         public string Name { get; set; }
         public double MaxAmount { get; set; }
         public string Payments { get; set; }
+
+        public LoanDTO() { }
+
+        public LoanDTO(Loan loan)
+        {
+            Id = loan.Id;
+            Name = loan.Name;
+            MaxAmount = loan.MaxAmount;
+            Payments = loan.Payments;
+        }
     }
 }

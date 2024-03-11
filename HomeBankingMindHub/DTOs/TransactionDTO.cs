@@ -14,4 +14,15 @@ public class TransactionDTO
 
     public DateTime Date { get; set; }
 
+    public TransactionDTO() { }
+
+    public TransactionDTO(Transaction transaction)
+    {
+        Id = transaction.Id;
+        Type = transaction.Type.ToString();
+        Amount = transaction.Amount;
+        Description = transaction.Description;
+        Date = DateTime.Now;
+    }
+
 }

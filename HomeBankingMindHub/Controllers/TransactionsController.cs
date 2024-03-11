@@ -70,8 +70,7 @@ namespace HomeBankingMindHub.Controllers
                     }
 
                     // Obtengo email de cliente
-                    string clientEmail = User.FindFirst("Client")?.Value;
-
+                    string clientEmail = User.FindFirst("Client") == null ? User.FindFirst("Admin").Value : User.FindFirst("Client").Value;
                     if (string.IsNullOrEmpty(clientEmail))
                     {
                         return Forbid();

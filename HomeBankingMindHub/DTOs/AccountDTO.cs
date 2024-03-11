@@ -20,6 +20,17 @@ namespace HomeBankingMindHub.DTOs
 
         public ICollection<TransactionDTO> Transactions { get; set; }
 
+        public AccountDTO() { }
+
+        public AccountDTO(Account account)
+        {
+            Id = account.Id;
+            Number = account.Number;
+            CreationDate = DateTime.Now;
+            Balance = account.Balance;
+            Transactions = account.Transactions != null ? account.Transactions.Select(transaction => new TransactionDTO(transaction)).ToList() : null;
+        }
+
     }
 
 }

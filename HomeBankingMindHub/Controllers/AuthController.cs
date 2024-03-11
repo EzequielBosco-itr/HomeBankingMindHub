@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System;
 using HomeBankingMindHub.Models;
 using HomeBankingMindHub.DTOs;
+using Microsoft.AspNetCore.Authorization;
 
 namespace HomeBankingMindHub.Controllers
 {
@@ -56,6 +57,7 @@ namespace HomeBankingMindHub.Controllers
         }
 
         [HttpPost("logout")]
+        [Authorize(Policy = "ClientOnly")]
         public async Task<IActionResult> Logout()
         {
             try

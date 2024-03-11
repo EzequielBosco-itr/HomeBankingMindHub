@@ -39,13 +39,7 @@ namespace HomeBankingMindHub.Controllers
 
                 foreach (Loan loan in loans)
                 {
-                    var newLoanDTO = new LoanDTO
-                    {
-                        Id = loan.Id,
-                        Name = loan.Name,
-                        MaxAmount = loan.MaxAmount,
-                        Payments = loan.Payments
-                    };
+                    var newLoanDTO = new LoanDTO(loan);
 
                     loansDTO.Add(newLoanDTO);
                 }
@@ -96,8 +90,7 @@ namespace HomeBankingMindHub.Controllers
                     }
 
                     // Obtengo email de cliente
-                    string clientEmail = User.FindFirst("Client")?.Value;
-
+                    string clientEmail = User.FindFirst("Client") == null ? User.FindFirst("Admin").Value : User.FindFirst("Client").Value;
                     if (string.IsNullOrEmpty(clientEmail))
                     {
                         return Forbid();
@@ -116,7 +109,7 @@ namespace HomeBankingMindHub.Controllers
                     // Creo loan con 20%
                     ClientLoan newClientLoan = new ClientLoan
                     {
-                        Amount = loan.Amount * 0.2,
+                        Amount = loan.Amount * 1.2,
                         Payments = loan.Payments,
                         ClientId = client.Id,
                         LoanId = loan.LoanId

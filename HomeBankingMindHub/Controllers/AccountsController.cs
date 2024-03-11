@@ -56,28 +56,7 @@ namespace HomeBankingMindHub.Controllers
 
                 {
 
-                    var newAccountDTO = new AccountDTO
-
-                    {
-
-                        Id = account.Id,
-
-                        Number = account.Number,
-
-                        CreationDate = account.CreationDate,
-
-                        Balance = account.Balance,
-
-                        Transactions = account.Transactions.Select(transaction => new TransactionDTO
-                        {
-                            Id = transaction.Id,
-                            Type = transaction.Type.ToString(),
-                            Amount = transaction.Amount,
-                            Description = transaction.Description,
-                            Date = transaction.Date
-                        }).ToList()
-
-                    };
+                    var newAccountDTO = new AccountDTO(account);
 
                     accountsDTO.Add(newAccountDTO);
 
@@ -109,43 +88,19 @@ namespace HomeBankingMindHub.Controllers
             try
 
             {
-                string email = User.FindFirst("Client") != null ? User.FindFirst("Client").Value : string.Empty;
-
-                if (email == string.Empty)
+                string email = User.FindFirst("Client") == null ? User.FindFirst("Admin").Value : User.FindFirst("Client").Value;
+                if (string.IsNullOrEmpty(email))
                 {
                     return Forbid();
                 }
+
                 var account = _accountRepository.GetAccountByIdAndClientEmail(id, email);
                 if (account == null)
                 {
                     return Forbid();
                 }
 
-
-
-                var accountDTO = new AccountDTO
-
-                {
-
-                    Id = account.Id,
-
-                    Number = account.Number,
-
-                    CreationDate = account.CreationDate,
-
-                    Balance = account.Balance,
-
-                    Transactions = account.Transactions.Select(transaction => new TransactionDTO
-                    {
-                        Id = transaction.Id,
-                        Type = transaction.Type.ToString(),
-                        Amount = transaction.Amount,
-                        Description = transaction.Description,
-                        Date = transaction.Date
-                    }).ToList()
-
-                };
-
+                var accountDTO = new AccountDTO(account);
 
                 return Ok(accountDTO);
 

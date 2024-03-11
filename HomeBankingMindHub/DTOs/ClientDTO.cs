@@ -30,6 +30,19 @@ namespace HomeBankingMindHub.DTOs
 
         public ICollection<CardDTO> Cards { get; set; }
 
+        public ClientDTO() { }
+
+        public ClientDTO(Client client)
+        {
+            Id = client.Id;
+            FirstName = client.FirstName;
+            LastName = client.LastName;
+            Email = client.Email;
+            Accounts = client.Accounts.Select(account => new AccountDTO(account)).ToList();
+            Loans = client.ClientLoans.Select(loan => new ClientLoanDTO(loan)).ToList();
+            Cards = client.Cards.Select(card => new CardDTO(card)).ToList();
+        }
+
     }
 
 }

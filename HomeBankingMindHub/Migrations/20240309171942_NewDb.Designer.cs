@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HomeBankingMindHub.Migrations
 {
     [DbContext(typeof(HomeBankingContext))]
-    [Migration("20240229192850_NewDb")]
+    [Migration("20240309171942_NewDb")]
     partial class NewDb
     {
         /// <inheritdoc />

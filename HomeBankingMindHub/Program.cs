@@ -41,6 +41,8 @@ builder.Services.AddAuthorization(options =>
             context.User.HasClaim(c => c.Type == "Admin"));
     });
 
+    //options.AddPolicy("ClientOnly", policy => policy.RequireClaim("Client"));
+
     options.AddPolicy("AdminOnly", policy => policy.RequireClaim("Admin"));
 });
 
