@@ -18,5 +18,8 @@ public class Transaction
 
     public long AccountId { get; set; }
 
-
+    public Transaction()
+    {
+        Date = DateTime.Now;
+    }
 }

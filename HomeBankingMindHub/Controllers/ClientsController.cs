@@ -2,6 +2,7 @@
 using HomeBankingMindHub.Models;
 
 using HomeBankingMindHub.Repositories;
+using HomeBankingMindHub.Services;
 using HomeBankingMindHub.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -27,18 +28,15 @@ namespace HomeBankingMindHub.Controllers
 
     {
 
-        private IClientRepository _clientRepository;
-        private readonly IAccountRepository _accountRepository;
-        private ICardRepository _cardRepository;
+        private IClientService _clientService;
+        private IAccountService _accountService;
+        private ICardService _cardService;
 
-
-        public ClientsController(IClientRepository clientRepository, IAccountRepository accountRepository, ICardRepository cardRepository)
-
+        public ClientsController(IClientService clientService, IAccountService accountService, ICardService cardService)
         {
-
-            _clientRepository = clientRepository;
-            _accountRepository = accountRepository;
-            _cardRepository = cardRepository;
+            _clientService = clientService;
+            _accountService = accountService;
+            _cardService = cardService;
         }
 
 
@@ -46,40 +44,17 @@ namespace HomeBankingMindHub.Controllers
         [HttpGet]
         [Authorize(Policy = "AdminOnly")]
         public IActionResult Get()
-
         {
-
             try
-
             {
-
-                var clients = _clientRepository.GetAllClients();
-
-
-
-                var clientsDTO = new List<ClientDTO>();
-
-
-
-                foreach (Client client in clients)
-
-                {
-                    ClientDTO newClientDTO = new ClientDTO(client);
-                    clientsDTO.Add(newClientDTO);
-                }
-
-
+                var clientsDTO = _clientService.GetAllClientsDTO();
 
                 return Ok(clientsDTO);
 
             }
-
             catch (Exception ex)
-
             {
-
                 return StatusCode(500, ex.Message);
-
             }
 
         }
@@ -89,42 +64,28 @@ namespace HomeBankingMindHub.Controllers
         [HttpGet("{id}")]
         [Authorize(Policy = "AdminOnly")]
         public IActionResult Get(long id)
-
         {
-
             try
-
             {
-
-                var client = _clientRepository.FindById(id);
+                var client = _clientService.GetClientDTOById(id);
 
                 if (client == null)
 
                 {
-
                     return Forbid();
-
                 }
 
-
-                ClientDTO clientDTO = new ClientDTO(client);
-
-
-                return Ok(clientDTO);
-
+                return Ok(client);
+             
             }
-
             catch (Exception ex)
-
             {
-
                 return StatusCode(500, ex.Message);
-
             }
-
         }
 
         [HttpGet("current")]
+        [Authorize(Policy = "ClientOnly")]
         public IActionResult GetCurrent()
         {
             try
@@ -135,16 +96,14 @@ namespace HomeBankingMindHub.Controllers
                     return Forbid();
                 }
 
-                Client client = _clientRepository.FindByEmail(email);
+                ClientDTO client = _clientService.GetClientDTOByEmail(email);
 
                 if (client == null)
                 {
                     return Forbid();
                 }
 
-                ClientDTO clientDTO = new ClientDTO(client);
-
-                return Ok(clientDTO);
+                return Ok(client);
             }
             catch (Exception ex)
             {
@@ -176,54 +135,33 @@ namespace HomeBankingMindHub.Controllers
                 }
 
                 //buscamos si ya existe el usuario
-                if (_clientRepository.ExistsByEmail(client.Email))
+                if (_clientService.ClientExistsByEmail(client.Email))
                 {
-                    return StatusCode(403, "Email está en uso");
+                    return StatusCode(403, "Email en uso");
                 }
 
                 // verifico si es de la empresa para dar admin
                 bool isAdmin = client.Email.Contains("vt.com.ar");
 
                 // Hash pass
+                string passwordHash = PasswordHashUtils.HashPassword(client.Password);
 
-                string passwordHash = BCrypt.Net.BCrypt.HashPassword(client.Password);
+                // Creo cliente
+                Client newClient = _clientService.CreateClient(client.Email, passwordHash, client.FirstName, client.LastName, isAdmin);
 
-                Client newClient = new Client
-                {
-                    Email = client.Email,
-                    Password = passwordHash,
-                    FirstName = client.FirstName,
-                    LastName = client.LastName,
-                    IsAdmin = isAdmin,
-                };
-
-                _clientRepository.Save(newClient);
+                _clientService.SaveClient(newClient);
 
                 // Obtengo cliente
-                newClient = _clientRepository.FindByEmail(client.Email);
+                newClient = _clientService.GetClientByEmail(client.Email);
 
                 // Creo número de cuenta
-                int randomAccountNumber = RandomNumber.GenerateRandomNumber(100000, 999999);
-                string accountNumber = $"VIN-{randomAccountNumber}";
+                var accountNumber = _accountService.CreateAccountNumber();
 
-                // Verifico si el número de cuenta es único
-                while (_accountRepository.ExistsByAccountNumber(accountNumber))
-                {
-                    // Si ya existe, genero un nuevo número y vuelvo a verificar
-                    randomAccountNumber = RandomNumber.GenerateRandomNumber(100000, 999999);
-                    accountNumber = $"VIN-{randomAccountNumber}";
-                }
-
-                var newAccount = new Account
-                {
-                    ClientId = newClient.Id,
-                    Number = accountNumber,
-                    Balance = 0,
-                    CreationDate = DateTime.Now,
-                };
+                // Creo cuenta
+                var newAccount = _accountService.CreateAccount(newClient.Id, accountNumber);
 
                 // guardo
-                _accountRepository.Save(newAccount);
+                _accountService.SaveAccount(newAccount);
 
                 return Created("", newClient); 
             }
@@ -247,37 +185,23 @@ namespace HomeBankingMindHub.Controllers
                 }
 
                 // Obtengo el objeto cliente
-                Client client = _clientRepository.FindByEmail(clientEmail);
+                Client client = _clientService.GetClientByEmail(clientEmail);
 
                 // Verifico si el cliente ya tiene 3 cuentas
-                int clientAccountsCount = _accountRepository.GetAccountsCountByClient(client.Id);
+                int clientAccountsCount = _accountService.GetAccountsCountByClient(client.Id);
                 if (clientAccountsCount >= 3)
                 {
                     return StatusCode(403, "Error. El cliente ya tiene el máximo de cuentas registradas (3).");
                 }
 
                 // Creo número de cuenta
-                int randomAccountNumber = RandomNumber.GenerateRandomNumber(100000, 999999);
-                string accountNumber = $"VIN-{randomAccountNumber}";
+                string accountNumber = _accountService.CreateAccountNumber();
 
-                // Verifico si el número de cuenta es único
-                while (_accountRepository.ExistsByAccountNumber(accountNumber))
-                {
-                    // Si ya existe, genero un nuevo número y vuelvo a verificar
-                    randomAccountNumber = RandomNumber.GenerateRandomNumber(100000, 999999);
-                    accountNumber = $"VIN-{randomAccountNumber}";
-                }
-
-                var newAccount = new Account
-                {
-                    ClientId = client.Id,
-                    Number = accountNumber,
-                    Balance = 0,
-                    CreationDate = DateTime.Now,
-                };
+                // Creo cuenta
+                var newAccount = _accountService.CreateAccount(client.Id, accountNumber);
 
                 // guardo
-                _accountRepository.Save(newAccount);
+                _accountService.SaveAccount(newAccount);
                 // Retorno respuesta
                 return Created("", newAccount);
 
@@ -302,17 +226,9 @@ namespace HomeBankingMindHub.Controllers
                 }
 
                 // Obtengo todas las cuentas asociadas al cliente
-                var accounts = _accountRepository.GetAccountsByEmail(clientEmail);
+                var accounts = _accountService.GetAccountsByEmail(clientEmail);
 
-                var accountsDTO = new List<AccountDTO>();
-
-                foreach (Account account in accounts)
-                {
-                    var newAccountDTO = new AccountDTO(account);
-                    accountsDTO.Add(newAccountDTO);
-                };
-
-                return Ok(accountsDTO);
+                return Ok(accounts);
             }
 
             catch (Exception ex)
@@ -345,50 +261,27 @@ namespace HomeBankingMindHub.Controllers
                 }
 
                 // Obtengo el cliente
-                Client client = _clientRepository.FindByEmail(clientEmail);
+                Client client = _clientService.GetClientByEmail(clientEmail);
 
                 // Verifico si el cliente ya tiene 6 tarjetas
-                int clientCardsCount = _cardRepository.GetCardsCountByClient(client.Id);
+                int clientCardsCount = _cardService.GetCardsCountByClient(client.Id);
                 if (clientCardsCount >= 6)
                 {
                     return StatusCode(403, "Error. El cliente ya tiene el máximo de tarjetas registradas (6).");
                 }
 
                 // Verifico si ya hay una tarjeta del mismo tipo y color
-                bool hasSameTypeAndColor = _cardRepository.ExistsByTypeAndColor(client.Id, card.Type, card.Color);
-
+                bool hasSameTypeAndColor = _cardService.ExistsByTypeAndColor(client.Id, card.Type, card.Color);
                 if (hasSameTypeAndColor)
                 {
                     return StatusCode(403, "Error. El cliente ya tiene una tarjeta con el mismo tipo y color.");
                 }
 
                 // Creo número de tarjeta
-                int randomCardNumber = RandomNumber.GenerateRandomNumber(1000, 9999);
-                int randomCardNumber1 = RandomNumber.GenerateRandomNumber(1000, 9999);
-                int randomCardNumber2 = RandomNumber.GenerateRandomNumber(1000, 9999);
-                int randomCardNumber3 = RandomNumber.GenerateRandomNumber(1000, 9999);
-
-
-                string cardNumber = $"{randomCardNumber}{randomCardNumber1}{randomCardNumber2}{randomCardNumber3}";
-
-                // Verifico si el número de tarjeta es único
-                while (_cardRepository.ExistsByCardNumber(cardNumber))
-                {
-                    // Si ya existe, genero un nuevo número y vuelvo a verificar
-                    randomCardNumber = RandomNumber.GenerateRandomNumber(1000, 9999);
-                    randomCardNumber1 = RandomNumber.GenerateRandomNumber(1000, 9999);
-                    randomCardNumber2 = RandomNumber.GenerateRandomNumber(1000, 9999);
-                    randomCardNumber3 = RandomNumber.GenerateRandomNumber(1000, 9999);
-                    cardNumber = $"{randomCardNumber}{randomCardNumber1}{randomCardNumber2}{randomCardNumber3}";
-                }
-
-                // Agrego formato de tarjeta
-                string cardNumberFormat = $"{randomCardNumber}-{randomCardNumber1}-{randomCardNumber2}-{randomCardNumber3}";
+                string cardNumber = _cardService.CreateCardNumber();
 
                 // Creo número de Cvv
-                long randomCardCvv = RandomNumber.GenerateRandomNumber(100, 999);
-
-                int cardCvv = (int)randomCardCvv;
+                int cardCvv = _cardService.CreateCardCvv();
 
                 // Convierto la cadena a enum CardType
                 if (!Enum.TryParse<CardType>(card.Type, out CardType cardType))
@@ -403,17 +296,9 @@ namespace HomeBankingMindHub.Controllers
                 }
 
                 // Creo tarjeta
-                var newCard = new Card
-                {
-                    ClientId = client.Id,
-                    CardHolder = client.FirstName + " " + client.LastName,
-                    Type = card.Type,
-                    Color = card.Color,
-                    Number = cardNumberFormat,
-                    Cvv = cardCvv
-                };
+                var newCard = _cardService.CreateCard(client.Id, client.FirstName, client.LastName, card.Type, card.Color, cardNumber, cardCvv);
 
-                _cardRepository.Save(newCard);
+                _cardService.SaveCard(newCard);
                 return Created("", newCard);
 
             }
@@ -436,17 +321,8 @@ namespace HomeBankingMindHub.Controllers
                     return Forbid();
                 }
 
-                // Obtengo todas las cuentas asociadas al cliente
-                var cards = _cardRepository.GetCardsByEmail(clientEmail);
-
-                var cardsDTO = new List<CardDTO>();
-
-                foreach (Card card in cards)
-                {
-                    var newCardDTO = new CardDTO(card);
-
-                    cardsDTO.Add(newCardDTO);
-                }
+                // Obtengo todas las cards asociadas al cliente
+                var cardsDTO = _cardService.GetCardsByEmail(clientEmail);
 
                 return Ok(cardsDTO);
             }

@@ -11,6 +11,7 @@ using System;
 using HomeBankingMindHub.Models;
 using HomeBankingMindHub.DTOs;
 using Microsoft.AspNetCore.Authorization;
+using HomeBankingMindHub.Services;
 
 namespace HomeBankingMindHub.Controllers
 {
@@ -18,10 +19,10 @@ namespace HomeBankingMindHub.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private IClientRepository _clientRepository;
-        public AuthController(IClientRepository clientRepository)
+        private IClientService _clientService;
+        public AuthController(IClientService clientService)
         {
-            _clientRepository = clientRepository;
+            _clientService = clientService;
         }
 
         [HttpPost("login")]
@@ -29,7 +30,7 @@ namespace HomeBankingMindHub.Controllers
         {
             try
             {
-                Client user = _clientRepository.FindByEmail(client.Email);
+                Client user = _clientService.GetClientByEmail(client.Email);
                 if (user == null || !BCrypt.Net.BCrypt.Verify(client.Password, user.Password))
                     return Unauthorized();
 

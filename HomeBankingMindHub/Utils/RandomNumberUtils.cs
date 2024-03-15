@@ -1,6 +1,6 @@
 ﻿namespace HomeBankingMindHub.Utils
 {
-    public class RandomNumber
+    public class RandomNumberUtils
     {
         public static int GenerateRandomNumber(int min, int max)
         {

@@ -2,15 +2,13 @@
 using Microsoft.AspNetCore.Authorization;
 using HomeBankingMindHub.Repositories;
 using Microsoft.AspNetCore.Http;
-
 using Microsoft.AspNetCore.Mvc;
-
 using System;
-
 using System.Collections.Generic;
-
 using System.Linq;
 using HomeBankingMindHub.DTOs;
+using HomeBankingMindHub.Services;
+using HomeBankingMindHub.Services.Implements;
 
 namespace HomeBankingMindHub.Controllers
 {
@@ -20,48 +18,20 @@ namespace HomeBankingMindHub.Controllers
 
     public class AccountsController : ControllerBase
     {
-        private IAccountRepository _accountRepository;
+        private IAccountService _accountService;
 
-
-
-        public AccountsController(IAccountRepository accountRepository)
-
+        public AccountsController(IAccountService accountService)
         {
-
-            _accountRepository = accountRepository;
-
+            _accountService = accountService;
         }
-
-
 
         [HttpGet]
         [Authorize(Policy = "AdminOnly")]
         public IActionResult Get()
-
         {
-
             try
-
             {
-
-                var accounts = _accountRepository.GetAllAccounts();
-
-
-
-                var accountsDTO = new List<AccountDTO>();
-
-
-
-                foreach (Account account in accounts)
-
-                {
-
-                    var newAccountDTO = new AccountDTO(account);
-
-                    accountsDTO.Add(newAccountDTO);
-
-                }
-
+                var accountsDTO = _accountService.GetAllAccountsDTO();
 
                 return Ok(accountsDTO);
 
@@ -82,11 +52,8 @@ namespace HomeBankingMindHub.Controllers
         [HttpGet("{id}")]
         [Authorize(Policy = "ClientOnly")]
         public IActionResult Get(long id)
-
         {
-
             try
-
             {
                 string email = User.FindFirst("Client") == null ? User.FindFirst("Admin").Value : User.FindFirst("Client").Value;
                 if (string.IsNullOrEmpty(email))
@@ -94,15 +61,13 @@ namespace HomeBankingMindHub.Controllers
                     return Forbid();
                 }
 
-                var account = _accountRepository.GetAccountByIdAndClientEmail(id, email);
+                var account = _accountService.GetAccountDTOByIdAndClientEmail(id, email);
                 if (account == null)
                 {
                     return Forbid();
                 }
 
-                var accountDTO = new AccountDTO(account);
-
-                return Ok(accountDTO);
+                return Ok(account);
 
             }
 

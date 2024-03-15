@@ -6,6 +6,9 @@ using HomeBankingMindHub.Models;
 using HomeBankingMindHub.DTOs;
 using System.Net;
 using System.Transactions;
+using HomeBankingMindHub.Services;
+using HomeBankingMindHub.Services.Implements;
+using Microsoft.Identity.Client;
 
 namespace HomeBankingMindHub.Controllers
 {
@@ -13,15 +16,15 @@ namespace HomeBankingMindHub.Controllers
     [ApiController]
     public class TransactionsController : ControllerBase
     {
-        private IClientRepository _clientRepository;
-        private IAccountRepository _accountRepository;
-        private ITransactionRepository _transactionRepository;
+        private IClientService _clientService;
+        private IAccountService _accountService;
+        private ITransactionService _transactionService;
 
-        public TransactionsController(IClientRepository clientRepository, IAccountRepository accountRepository, ITransactionRepository transactionRepository)
+        public TransactionsController(IClientService clientService, IAccountService accountService, ITransactionService transactionService)
         {
-            _clientRepository = clientRepository;
-            _accountRepository = accountRepository;
-            _transactionRepository = transactionRepository;
+            _clientService = clientService;
+            _accountService = accountService;
+            _transactionService = transactionService;
         }
 
         [HttpPost]
@@ -58,13 +61,13 @@ namespace HomeBankingMindHub.Controllers
                     }
 
                     // Verifico si existe la cuenta de origen 
-                    if (!_accountRepository.ExistsByAccountNumber(transaction.FromAccountNumber))
+                    if (!_accountService.ExistsByAccountNumber(transaction.FromAccountNumber))
                     {
                         return StatusCode(403, "La cuenta de origen no existe.");
                     }
 
                     // Verifico si existe la cuenta de destino
-                    if (!_accountRepository.ExistsByAccountNumber(transaction.ToAccountNumber))
+                    if (!_accountService.ExistsByAccountNumber(transaction.ToAccountNumber))
                     {
                         return StatusCode(403, "La cuenta de destino no existe.");
                     }
@@ -77,12 +80,13 @@ namespace HomeBankingMindHub.Controllers
                     }
 
                     // Obtengo el objeto cliente
-                    Client client = _clientRepository.FindByEmail(clientEmail);
+                    Client client = _clientService.GetClientByEmail(clientEmail);
 
                     // Verifico si la cuenta de origen pertenece al cliente autenticado
-                    var accountOrigin = _accountRepository.FindByNumber(transaction.FromAccountNumber);
+                    var accountOrigin = _accountService.GetAccountByNumber(transaction.FromAccountNumber);
 
-                    if (accountOrigin == null || accountOrigin.ClientId != client.Id)
+                    bool belongsTo = _accountService.AccountBelongsToClient(accountOrigin.ClientId, client.Id);
+                    if (!belongsTo)
                     {
                         return StatusCode(403, "La cuenta de origen no pertenece al cliente autenticado.");
                     }
@@ -93,34 +97,23 @@ namespace HomeBankingMindHub.Controllers
                         return StatusCode(403, "La transferencia supera el monto disponible en la cuenta.");
                     }
 
-                    Transaction newTransactionDebit = new Transaction
-                    {
-                        Type = TransactionType.DEBIT,
-                        Amount = -transaction.Amount,
-                        Description = transaction.Description + " " + transaction.FromAccountNumber,
-                        AccountId = accountOrigin.Id,
-                        Date = DateTime.Now
-                    };
+                    // creo transferencia debito
+                    Transaction newTransactionDebit = _transactionService.CreateTransaction(TransactionType.DEBIT, transaction.Amount, transaction.Description, accountOrigin.Id, transaction.ToAccountNumber);
 
-                    var accountTarget = _accountRepository.FindByNumber(transaction.ToAccountNumber);
+                    // creo transferencia credito
+                    var accountTarget = _accountService.GetAccountByNumber(transaction.ToAccountNumber);
 
-                    Transaction newTransactionCredit = new Transaction
-                    {
-                        Type = TransactionType.CREDIT,
-                        Amount = transaction.Amount,
-                        Description = transaction.Description + " " + transaction.ToAccountNumber,
-                        AccountId = accountTarget.Id,
-                        Date = DateTime.Now
-                    };
 
-                    _transactionRepository.Save(newTransactionDebit);
-                    _transactionRepository.Save(newTransactionCredit);
+                    Transaction newTransactionCredit = _transactionService.CreateTransaction(TransactionType.CREDIT, transaction.Amount, transaction.Description, accountTarget.Id, transaction.FromAccountNumber);
+
+                    _transactionService.SaveTransaction(newTransactionDebit);
+                    _transactionService.SaveTransaction(newTransactionCredit);
 
                     accountOrigin.Balance -= transaction.Amount;
                     accountTarget.Balance += transaction.Amount;
 
-                    _accountRepository.Save(accountOrigin);
-                    _accountRepository.Save(accountTarget);
+                    _accountService.SaveAccount(accountOrigin);
+                    _accountService.SaveAccount(accountTarget);
 
                     scope.Complete();
                     return Created("", newTransactionDebit);

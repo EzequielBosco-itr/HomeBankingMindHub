@@ -5,6 +5,8 @@ using HomeBankingMindHub.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using HomeBankingMindHub.DTOs;
 using System.Transactions;
+using HomeBankingMindHub.Services;
+using HomeBankingMindHub.Services.Implements;
 
 namespace HomeBankingMindHub.Controllers
 {
@@ -12,19 +14,19 @@ namespace HomeBankingMindHub.Controllers
     [ApiController]
     public class LoansController : ControllerBase
     {
-        private IClientRepository _clientRepository;
-        private IAccountRepository _accountRepository;
-        private ILoanRepository _loanRepository;
-        private IClientLoanRepository _clientLoanRepository;
-        private ITransactionRepository _transactionRepository;
+        private ILoanService _loanService;
+        private IClientService _clientService;
+        private IClientLoanService _clientLoanService;
+        private IAccountService _accountService;
+        private ITransactionService _transactionService;
 
-        public LoansController(IClientRepository clientRepository, IAccountRepository accountRepository, ILoanRepository loanRepository, IClientLoanRepository clientLoanRepository, ITransactionRepository transactionRepository)
+        public LoansController(ILoanService loanService, IClientService clientService, IClientLoanService clientLoanService, IAccountService accountService, ITransactionService transactionService)
         {
-            _clientRepository = clientRepository;
-            _accountRepository = accountRepository;
-            _loanRepository = loanRepository;
-            _clientLoanRepository = clientLoanRepository;
-            _transactionRepository = transactionRepository;
+            _loanService = loanService;
+            _clientService = clientService;
+            _clientLoanService = clientLoanService;
+            _accountService = accountService;
+            _transactionService = transactionService;
         }
 
         [HttpGet]
@@ -33,16 +35,7 @@ namespace HomeBankingMindHub.Controllers
         {
             try
             {
-                var loans = _loanRepository.GetAll();
-
-                var loansDTO = new List<LoanDTO>();
-
-                foreach (Loan loan in loans)
-                {
-                    var newLoanDTO = new LoanDTO(loan);
-
-                    loansDTO.Add(newLoanDTO);
-                }
+                var loansDTO = _loanService.GetAllLoansDTO();
 
                 return Ok(loansDTO);
             }
@@ -61,7 +54,7 @@ namespace HomeBankingMindHub.Controllers
                 try
                 {
                     // Valido datos
-                    var loanValidate = _loanRepository.FindById(loan.LoanId);
+                    var loanValidate = _loanService.GetLoanById(loan.LoanId);
                     if (loanValidate == null)
                     {
                         return StatusCode(403, "Préstamo inválido");
@@ -84,7 +77,7 @@ namespace HomeBankingMindHub.Controllers
                         return StatusCode(403, "Cuota seleccionada no permitida en este préstamo");
                     }
 
-                    if (!_accountRepository.ExistsByAccountNumber(loan.ToAccountNumber))
+                    if (!_accountService.ExistsByAccountNumber(loan.ToAccountNumber))
                     {
                         return StatusCode(403, "Cuenta de destino inválida");
                     }
@@ -97,39 +90,27 @@ namespace HomeBankingMindHub.Controllers
                     }
 
                     // Obtengo objeto client
-                    Client client = _clientRepository.FindByEmail(clientEmail);
+                    Client client = _clientService.GetClientByEmail(clientEmail);
 
                     // Verifico si la cuenta de destino pertenece al cliente autenticado
-                    var accountTarget = _accountRepository.FindByNumber(loan.ToAccountNumber);
+                    var accountTarget = _accountService.GetAccountByNumber(loan.ToAccountNumber);
                     if (accountTarget == null || accountTarget.ClientId != client.Id)
                     {
                         return StatusCode(403, "La cuenta de destino no pertenece al cliente autenticado.");
                     }
 
                     // Creo loan con 20%
-                    ClientLoan newClientLoan = new ClientLoan
-                    {
-                        Amount = loan.Amount * 1.2,
-                        Payments = loan.Payments,
-                        ClientId = client.Id,
-                        LoanId = loan.LoanId
-                    };
+                    ClientLoan newClientLoan = _clientLoanService.CreateClientLoan(loan.Amount, loan.Payments, client.Id, loan.LoanId);
 
-                    _clientLoanRepository.Save(newClientLoan);
+                    _clientLoanService.SaveClientLoan(newClientLoan);
 
-                    Transaction newTransactionCredit = new Transaction
-                    {
-                        Type = TransactionType.CREDIT,
-                        Amount = loan.Amount,
-                        Description = loanValidate.Name + " " + "Loan approved",
-                        AccountId = accountTarget.Id,
-                        Date = DateTime.Now
-                    };
+                    string description = loanValidate.Name + " " + "Loan approved";
+                    Transaction newTransactionCredit = _transactionService.CreateTransaction(TransactionType.CREDIT, loan.Amount, description, accountTarget.Id, loan.ToAccountNumber);
 
-                    _transactionRepository.Save(newTransactionCredit);
+                    _transactionService.SaveTransaction(newTransactionCredit);
 
                     accountTarget.Balance += loan.Amount;
-                    _accountRepository.Save(accountTarget);
+                    _accountService.SaveAccount(accountTarget);
 
                     scope.Complete();
                     return Created("", newClientLoan);
